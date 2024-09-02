@@ -2,6 +2,7 @@ import customtkinter as ctk
 from PIL import Image, ImageTk, ImageFilter, ImageEnhance
 
 changed_image = None
+image = None
 app = ctk.CTk()
 app.title('Photo Editor')
 app.geometry('600x500')
@@ -12,7 +13,7 @@ def show_image(image):
     label.configure(image = image)
     label.image = image
 def upload_image():
-    global changed_image
+    global changed_image, image
     file_path = ctk.filedialog.askopenfilename(filetypes = [('PNG', '*.png'), ('JPEG', '*.jpeg')])
     if file_path:
         image = Image.open(file_path)
@@ -53,25 +54,31 @@ def contrast_image(value):
         contrast = ImageEnhance.Contrast(changed_image)
         changed_image = contrast.enhance(value)
         show_image(changed_image)
+def undo_changes():
+    global image
+    if image != None:
+        show_image(image)
 frame = ctk.CTkFrame(app)
-button = ctk.CTkButton(frame, text = 'Завантажити зображення', command = upload_image)
-button_download = ctk.CTkButton(frame, text = 'Зберегти', command = save_image)
+button = ctk.CTkButton(frame, text = 'Open Image', command = upload_image)
 frame.pack(pady = 20)
 button.pack(pady = 5)
+button_download = ctk.CTkButton(frame, text = 'Download', command = save_image)
 button_download.pack(pady = 5)
-button_rotate = ctk.CTkButton(app, text = 'Повернути', command = rotate_image)
+button_rotate = ctk.CTkButton(app, text = 'Rotate', command = rotate_image)
 button_rotate.place(x = 450, y = 20)
-button_bw = ctk.CTkButton(app, text = 'Ч/б', command = bw_image)
+button_bw = ctk.CTkButton(app, text = 'B&W', command = bw_image)
 button_bw.place(x = 450, y = 60)
-button_blur = ctk.CTkButton(app, text = 'Заблюрить', command = blur_image)
+button_blur = ctk.CTkButton(app, text = 'Blur', command = blur_image)
 button_blur.place(x = 450, y = 100)
-label_bright = ctk.CTkLabel(app, text = 'Осветлить')
-label_bright.place(x = 70, y = 15)
+label_bright = ctk.CTkLabel(app, text = 'Brightness')
+label_bright.place(x = 12, y = 8)
 slider_bright = ctk.CTkSlider(app, from_ = 0.9, to = 1.1, command = brightness_image)
-slider_bright.place(x = 5, y = 50)
-label_contrast = ctk.CTkLabel(app, text = 'Контраст')
-label_contrast.place(x = 75, y = 90)
+slider_bright.place(x = 5, y = 40)
+label_contrast = ctk.CTkLabel(app, text = 'Contrast')
+label_contrast.place(x = 12, y = 63)
 slider_bright = ctk.CTkSlider(app, from_ = 0, to = 2, command = contrast_image)
-slider_bright.place(x = 5, y = 125)
+slider_bright.place(x = 5, y = 95)
+button_undo = ctk.CTkButton(app, text = 'Undo changes', command = undo_changes)
+button_undo.place(x = 420, y = 450)
 
 app.mainloop()
