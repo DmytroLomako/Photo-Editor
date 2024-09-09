@@ -2,15 +2,18 @@ import customtkinter as ctk
 from PIL import Image, ImageTk, ImageFilter, ImageEnhance, ImageDraw, ImageFont
 from .settings import *
 import os
+import cv2
+import numpy as np
 
+file_path = None
 def show_image(image):
     image_display = image.resize((400, 400))
     image = ImageTk.PhotoImage(image_display)
     label.configure(image = image)
     label.image = image
 def upload_image(slider_bright, entry_width, entry_height):
-    global changed_image, image
-    file_path = ctk.filedialog.askopenfilename(filetypes = [('PNG', '*.png'), ('JPEG', '*.jpeg')])
+    global changed_image, image, file_path
+    file_path = ctk.filedialog.askopenfilename(filetypes = [('PNG', '*.png'), ('JPEG', '*.jpeg'), ('WEBP', '*.webp')])
     if file_path:
         image = Image.open(file_path)
         changed_image = image.copy()
@@ -119,3 +122,13 @@ def open_text_modal(event):
             modal.destroy()
     button_send_text = ctk.CTkButton(modal, text = 'Apply', command = add_text)
     button_send_text.pack(pady = 5)
+def watermark_remove():
+    global changed_image, file_path
+    if changed_image != None:
+        img = cv2.imread(file_path)
+        alpha = 2.0
+        beta = -160
+        new = alpha * img + beta
+        new_img = np.clip(new, 0, 255).astype(np.uint8)
+        changed_image = Image.fromarray(new_img)
+        show_image(changed_image)
