@@ -5,18 +5,31 @@ import os
 import cv2
 import numpy as np
 
+list_changes = []
+list_undo_changes = []
+redo_changing = False
+changing = False
 file_path = None
 def show_image(image):
+    global list_changes, changing, redo_changing, list_undo_changes
+    if not changing:
+        list_changes.append(image)
+    if redo_changing:
+        list_undo_changes = []
+        redo_changing = False
+    changing = False
+    print('hi', len(list_changes))
     image_display = image.resize((400, 400))
     image = ImageTk.PhotoImage(image_display)
     label.configure(image = image)
     label.image = image
 def upload_image(slider_bright, entry_width, entry_height):
-    global changed_image, image, file_path
+    global changed_image, image, file_path, list_changes
     file_path = ctk.filedialog.askopenfilename(filetypes = [('PNG', '*.png'), ('JPEG', '*.jpeg'), ('WEBP', '*.webp')])
     if file_path:
         image = Image.open(file_path)
         changed_image = image.copy()
+        list_changes = []
         show_image(image)
         label.pack(pady = 100)
         slider_bright.set(1)
@@ -60,9 +73,27 @@ def contrast_image(value):
         changed_image = contrast.enhance(value)
         show_image(changed_image)
 def undo_changes():
-    global image, changed_image
-    if image != None:
-        changed_image = image
+    global list_changes, changed_image, changing, list_undo_changes
+    if changed_image != None and len(list_changes) > 1:
+        changing = True
+        list_undo_changes.append(list_changes[-1])
+        list_changes.pop(-1)
+        changed_image = list_changes[-1]
+        show_image(changed_image)
+    elif changed_image != None and len(list_changes) == 1:
+        changing = True
+        changed_image = list_changes[0]
+        show_image(changed_image)
+def redo_changes():
+    global list_undo_changes, changed_image, changing, redo_changing
+    if changed_image != None and len(list_undo_changes) > 1:
+        redo_changing = True
+        changed_image = list_undo_changes[-1]
+        list_undo_changes.pop(-1)
+        show_image(changed_image)
+    elif changed_image!= None and len(list_undo_changes) == 1:
+        redo_changing = True
+        changed_image = list_undo_changes[0]
         show_image(changed_image)
 def start_crop(event):
     global crop_x, crop_y
@@ -118,8 +149,8 @@ def open_text_modal(event):
             change_x = changed_image.width/400
             change_y = changed_image.height/400
             draw.text((text_x * change_x, text_y * change_y), entry_input_text.get(), font = font, fill = (255, 255, 255))
-            show_image(changed_image)
             modal.destroy()
+            show_image(changed_image)
     button_send_text = ctk.CTkButton(modal, text = 'Apply', command = add_text)
     button_send_text.pack(pady = 5)
 def watermark_remove():
