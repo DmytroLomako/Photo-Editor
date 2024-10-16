@@ -4,6 +4,8 @@ from .settings import *
 import os
 import cv2
 import numpy as np
+from .google_drive import get_images, list_images, MediaIoBaseDownload
+import io
 
 list_changes = []
 list_undo_changes = []
@@ -23,9 +25,12 @@ def show_image(image):
     image = ImageTk.PhotoImage(image_display)
     label.configure(image = image)
     label.image = image
-def upload_image(slider_bright, entry_width, entry_height):
+def upload_image(slider_bright, entry_width, entry_height, image_path = None):
     global changed_image, image, file_path, list_changes
-    file_path = ctk.filedialog.askopenfilename(filetypes = [('PNG', '*.png'), ('JPEG', '*.jpeg'), ('WEBP', '*.webp')])
+    if image_path == None:
+        file_path = ctk.filedialog.askopenfilename(filetypes = [('PNG', '*.png'), ('JPEG', '*.jpeg'), ('WEBP', '*.webp'), ('JPG', '*.jpg')])
+    else:
+        file_path = image_path
     if file_path:
         image = Image.open(file_path)
         changed_image = image.copy()
@@ -33,8 +38,42 @@ def upload_image(slider_bright, entry_width, entry_height):
         show_image(image)
         label.pack(pady = 100)
         slider_bright.set(1)
-        entry_width.insert(0, changed_image.width)
+        entry_width.insert(0, changed_image.width)     
         entry_height.insert(0, changed_image.height)
+def select_drive_image(id, slider_bright, entry_width, entry_height):
+    global service
+    image = service.files().get_media(fileId = id)
+    file = io.FileIO('temp_image.png', 'wb')
+    downloader = MediaIoBaseDownload(file, image)
+    done = False
+    while done is False:
+        status, done = downloader.next_chunk()
+        print(f"Download {int(status.progress() * 100)}.")
+    image_path = os.path.abspath(__file__ + '/../../temp_image.png')
+    upload_image(slider_bright, entry_width, entry_height, image_path)
+def upload_image_from_drive(slider_bright, entry_width, entry_height):
+    global list_images, service
+    service = get_images()
+    if list_images != []:
+        modal_drive_image = ctk.CTkToplevel(app)
+        modal_drive_image.title('Select Image from Drive')
+        modal_drive_image.geometry('500x400')
+        frame_drive = ctk.CTkScrollableFrame(modal_drive_image, 450, 340)
+        frame_drive.grid(row = 0, column = 0, padx = 20, pady = 20)
+        class DriveButton:
+            def __init__(self, text, id):
+                self.text = text
+                self.id = id
+            def make_button(self):
+                button = ctk.CTkButton(frame_drive, text = self.text, command = self.click)
+                button.pack(pady = 5)
+            def click(self):
+                select_drive_image(self.id, slider_bright, entry_width, entry_height)
+        for i in range(len(list_images)):
+            # button = ctk.CTkButton(frame_drive, text = list_images[i].split('%')[0], command = lambda: select_drive_image(list_images[i].split('%')[1]))
+            # button.pack(pady = 5)
+            button = DriveButton(list_images[i].split('%')[0], list_images[i].split('%')[1])
+            button.make_button()
 def rotate_image():
     global changed_image
     if changed_image != None:
@@ -148,7 +187,7 @@ def open_text_modal(event):
                 fill = (0, 0, 0)
             change_x = changed_image.width/400
             change_y = changed_image.height/400
-            draw.text((text_x * change_x, text_y * change_y), entry_input_text.get(), font = font, fill = (255, 255, 255))
+            draw.text((text_x * change_x, text_y * change_y), entry_input_text.get(), font = font, fill = fill)
             modal.destroy()
             show_image(changed_image)
     button_send_text = ctk.CTkButton(modal, text = 'Apply', command = add_text)
