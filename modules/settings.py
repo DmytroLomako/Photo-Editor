@@ -10,3 +10,4 @@ label = ctk.CTkLabel(app, text = '')
 crop_x = None
 crop_y = None
 path_to_temp_image = os.path.abspath(__file__ + '/../../temp_image.png')
+mutable_objects = {}

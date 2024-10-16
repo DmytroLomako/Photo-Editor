@@ -1,11 +1,8 @@
-import customtkinter as ctk
+import io, numpy as np
 from PIL import Image, ImageTk, ImageFilter, ImageEnhance, ImageDraw, ImageFont
 from .settings import *
-import os
-import cv2
-import numpy as np
 from .google_drive import get_images, list_images, MediaIoBaseDownload
-import io
+from rembg import remove 
 
 list_changes = []
 list_undo_changes = []
@@ -25,7 +22,7 @@ def show_image(image):
     image = ImageTk.PhotoImage(image_display)
     label.configure(image = image)
     label.image = image
-def upload_image(slider_bright, entry_width, entry_height, image_path = None):
+def upload_image(image_path = None):
     global changed_image, image, file_path, list_changes
     if image_path == None:
         file_path = ctk.filedialog.askopenfilename(filetypes = [('PNG', '*.png'), ('JPEG', '*.jpeg'), ('WEBP', '*.webp'), ('JPG', '*.jpg')])
@@ -37,10 +34,13 @@ def upload_image(slider_bright, entry_width, entry_height, image_path = None):
         list_changes = []
         show_image(image)
         label.pack(pady = 100)
-        slider_bright.set(1)
-        entry_width.insert(0, changed_image.width)     
-        entry_height.insert(0, changed_image.height)
-def select_drive_image(id, slider_bright, entry_width, entry_height):
+        mutable_objects['slider_bright'].set(1)
+        mutable_objects['slider_contrast'].set(1)
+        mutable_objects['entry_width'].delete(0, 10)
+        mutable_objects['entry_height'].delete(0, 10)
+        mutable_objects['entry_width'].insert(0, changed_image.width)     
+        mutable_objects['entry_height'].insert(0, changed_image.height)
+def select_drive_image(id):
     global service
     image = service.files().get_media(fileId = id)
     file = io.FileIO('temp_image.png', 'wb')
@@ -50,8 +50,8 @@ def select_drive_image(id, slider_bright, entry_width, entry_height):
         status, done = downloader.next_chunk()
         print(f"Download {int(status.progress() * 100)}.")
     image_path = os.path.abspath(__file__ + '/../../temp_image.png')
-    upload_image(slider_bright, entry_width, entry_height, image_path)
-def upload_image_from_drive(slider_bright, entry_width, entry_height):
+    upload_image(image_path)
+def upload_image_from_drive():
     global list_images, service
     service = get_images()
     if list_images != []:
@@ -68,10 +68,8 @@ def upload_image_from_drive(slider_bright, entry_width, entry_height):
                 button = ctk.CTkButton(frame_drive, text = self.text, command = self.click)
                 button.pack(pady = 5)
             def click(self):
-                select_drive_image(self.id, slider_bright, entry_width, entry_height)
+                select_drive_image(self.id)
         for i in range(len(list_images)):
-            # button = ctk.CTkButton(frame_drive, text = list_images[i].split('%')[0], command = lambda: select_drive_image(list_images[i].split('%')[1]))
-            # button.pack(pady = 5)
             button = DriveButton(list_images[i].split('%')[0], list_images[i].split('%')[1])
             button.make_button()
 def rotate_image():
@@ -195,10 +193,15 @@ def open_text_modal(event):
 def watermark_remove():
     global changed_image, file_path
     if changed_image != None:
-        img = cv2.imread(file_path)
+        img = np.array(changed_image)
         alpha = 2.0
         beta = -160
         new = alpha * img + beta
         new_img = np.clip(new, 0, 255).astype(np.uint8)
         changed_image = Image.fromarray(new_img)
+        show_image(changed_image)
+def background_remove():
+    global changed_image
+    if changed_image != None:
+        changed_image = remove(changed_image) 
         show_image(changed_image)
