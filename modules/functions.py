@@ -35,11 +35,10 @@ def upload_image_func(image_path = None):
         label.place(x = 73, y = 58)
         if 'slider' in mutable_objects.keys():
             mutable_objects['slider'].set(1)
-        # mutable_objects['slider_contrast'].set(1)
-        # mutable_objects['entry_width'].delete(0, 10)
-        # mutable_objects['entry_height'].delete(0, 10)
-        # mutable_objects['entry_width'].insert(0, changed_image.width)     
-        # mutable_objects['entry_height'].insert(0, changed_image.height)
+        mutable_objects['entry_width'].delete(0, 10)
+        mutable_objects['entry_height'].delete(0, 10)
+        mutable_objects['entry_width'].insert(0, changed_image.width)     
+        mutable_objects['entry_height'].insert(0, changed_image.height)
 def select_drive_image(id):
     global service
     image = service.files().get_media(fileId = id)
@@ -104,14 +103,14 @@ def rotate_func():
     if changed_image != None:
         changed_image = changed_image.rotate(90)
         show_image(changed_image)
-def save_image_func(entry_width = None, entry_height = None):
+def save_image_func(entry_width, entry_height):
     global changed_image
     if changed_image != None:
         width_image = int(changed_image.width)
         height_image = int(changed_image.height)
-        path_save = ctk.filedialog.asksaveasfilename(defaultextension = '.png', filetypes = [('PNG', '*.png'), ('JPEG', '*.jpeg')])
+        path_save = ctk.filedialog.asksaveasfilename(defaultextension = '.png', filetypes = [('PNG', '*.png'), ('JPEG', '*.jpeg'), ('JPG', '*.jpg'), ('WEBP', '*.webp')])
         if path_save:
-            # changed_image = changed_image.resize((int(entry_width.get()), int(entry_height.get())))
+            changed_image = changed_image.resize((int(entry_width.get()), int(entry_height.get())))
             changed_image.save(path_save)
             changed_image = changed_image.resize((width_image, height_image))
 def bw_func():
