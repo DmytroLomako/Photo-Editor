@@ -4,12 +4,12 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 list_images = []
-def get_images():
+def connection():
   creds = None
   if os.path.exists("modules/token.json"):
     creds = Credentials.from_authorized_user_file("modules/token.json", SCOPES)
@@ -44,4 +44,4 @@ def get_images():
   return service
 
 
-get_images()
+connection()
